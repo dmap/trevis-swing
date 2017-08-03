@@ -14,7 +14,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.NodeAttribute;
 import ch.usi.inf.sape.trevis.swing.TreeView;
 
@@ -26,11 +25,11 @@ import ch.usi.inf.sape.trevis.swing.TreeView;
  */
 public final class ZoomToAction  extends AbstractAction {
 
-	private final ContextTreeNode node;
+	private final Object node;
 	private final TreeView view;
 	
 	
-	public ZoomToAction(final String label, final NodeAttribute nodeNameAttribute, final ContextTreeNode node, final TreeView view) {
+	public ZoomToAction(final String label, final NodeAttribute nodeNameAttribute, final Object node, final TreeView view) {
 		setEnabled(node!=null);
 		putValue(NAME, label);
 		if (node!=null) {

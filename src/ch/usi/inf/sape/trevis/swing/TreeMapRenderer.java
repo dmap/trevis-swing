@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.LongAttribute;
 import ch.usi.inf.sape.trevis.swing.action.SetIntPropertyAction;
 import ch.usi.inf.sape.util.Colors;
@@ -51,7 +50,6 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 
 	public static final String GAP = "GAP";
 	private int gapSize;
-
 	
 	public TreeMapRenderer() {
 		gapSize = 3;
@@ -103,14 +101,14 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 	
 	//--- hit testing
 	@Override
-	public ContextTreeNode findNode(final int mx, final int my) {
+	public Object findNode(final int mx, final int my) {
 		if (getTop()==null) {
 			return null;
 		}
 		return findNode(getTop(), mx, my, 0, 0, getWidth(), getHeight(), (getView().getPathLengthToRoot(getTop())%2)==0);
 	}
 
-	private ContextTreeNode findNode(final ContextTreeNode node, final int mx, final int my, final int x, final int y, final int w, final int h, final boolean horizontal) {
+	private Object findNode(final Object node, final int mx, final int my, final int x, final int y, final int w, final int h, final boolean horizontal) {
 		final int gap = getGap();
 		if (w<2*gap || h<2*gap) {
 			return null;
@@ -121,15 +119,16 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 			return null;
 		}
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long cc = sizeMetric.evaluate(node.getChild(c));
+//		for (int c = 0; c<node.getChildCount(); c++) {
+		for(final Object next : getTree().iterable(node)) {
+			final long cc = sizeMetric.evaluate(next);
 			if (horizontal) {
-				final ContextTreeNode hit = findNode(node.getChild(c), mx, my, (int)(x+gap+((w-2*gap)*sum/size)), y+gap, (int)((w-2*gap)*cc/size), h-2*gap, false);
+				final Object hit = findNode(next, mx, my, (int)(x+gap+((w-2*gap)*sum/size)), y+gap, (int)((w-2*gap)*cc/size), h-2*gap, false);
 				if (hit!=null) {
 					return hit;
 				}
 			} else {
-				final ContextTreeNode hit = findNode(node.getChild(c), mx, my, x+gap, (int)(y+gap+((h-2*gap)*sum/size)), w-2*gap, (int)((h-2*gap)*cc/size), true);
+				final Object hit = findNode(next, mx, my, x+gap, (int)(y+gap+((h-2*gap)*sum/size)), w-2*gap, (int)((h-2*gap)*cc/size), true);
 				if (hit!=null) {
 					return hit;
 				}
@@ -150,7 +149,7 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 		renderNode(g2, surface, getTop(), 0, 0, surface.getWidth(), surface.getHeight(), (getView().getPathLengthToRoot(getTop())%2)==0);
 	}
 
-	private void renderNode(final Graphics2D g2, final Surface surface, final ContextTreeNode node, final int x, final int y, final int w, final int h, final boolean horizontal) {
+	private void renderNode(final Graphics2D g2, final Surface surface, final Object node, final int x, final int y, final int w, final int h, final boolean horizontal) {
 		 final int gap = getGap();
 		 if (w<2*gap || h<2*gap || w<1 || h<1) {
 			 return;
@@ -165,8 +164,8 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 
 		 // background
 		 final boolean focusSame = getView().getFocusSame();
-		 final ContextTreeNode current = getCurrent();
-		 final boolean focused = node==current || (focusSame && (current!=null && node!=null && node.getLabel()!=null && node.getLabel().equals(current.getLabel())));
+		 final Object current = getCurrent();
+		 final boolean focused = node==current || (focusSame && (current!=null && node!=null && getTree().getLabel(node) !=null && getTree().getLabel(node).equals(getTree().getLabel(current))));
 		 final int hsb = getHsb(node, focused);
 		 g2.setColor(new Color(Colors.hsbToRgb(hsb)));
 		 g2.fillRect(x, y, w, h);
@@ -176,8 +175,8 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 		 }
 
 		 long sum = 0;
-		 for (int c = 0; c<node.getChildCount(); c++) {
-			 sum += sizeMetric.evaluate(node.getChild(c));
+         for(final Object next : getTree().iterable(node)) {
+			 sum += sizeMetric.evaluate(next);
 		 }
 
 		 // hatch for too-small children
@@ -232,12 +231,12 @@ public final class TreeMapRenderer extends TreeViewRenderer {
 
 		 // children
 		 sum = 0;
-		 for (int c = 0; c<node.getChildCount(); c++) {
-			 final long cc = sizeMetric.evaluate(node.getChild(c));
+		 for(final Object next : getTree().iterable(node)) {
+			 final long cc = sizeMetric.evaluate(next);
 			 if (horizontal) {
-				 renderNode(g2, surface, node.getChild(c), (int)(x+gap+((w-2*gap)*sum/size)), y+gap, (int)((w-2*gap)*cc/size), h-2*gap, false);
+				 renderNode(g2, surface, next, (int)(x+gap+((w-2*gap)*sum/size)), y+gap, (int)((w-2*gap)*cc/size), h-2*gap, false);
 			 } else {
-				 renderNode(g2, surface, node.getChild(c), x+gap, (int)(y+gap+((h-2*gap)*sum/size)), w-2*gap, (int)((h-2*gap)*cc/size), true);
+				 renderNode(g2, surface, next, x+gap, (int)(y+gap+((h-2*gap)*sum/size)), w-2*gap, (int)((h-2*gap)*cc/size), true);
 			 }
 			 sum += cc;
 		 }

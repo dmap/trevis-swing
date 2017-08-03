@@ -21,7 +21,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.MatteBorder;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.util.Colors;
 
 
@@ -37,11 +36,11 @@ public final class BreadcrumbBar extends JPanel {
 	
 	private final class Step extends JLabel {
 		
-		private final ContextTreeNode node;
+		private final Object node;
 		private boolean containsMouse;
 		
 		
-		public Step(final ContextTreeNode node) {
+		public Step(final Object node) {
 			this.node = node;
 			final String text = view.getLabelAttribute().evaluate(node);
 			setText(text);
@@ -107,12 +106,12 @@ public final class BreadcrumbBar extends JPanel {
 	
 	private void update() {
 		removeAll();
-		final ContextTreeNode top = view.getTop();
-		ContextTreeNode node = top;
+		final Object top = view.getTop();
+		Object node = top;
 		final ArrayList<JComponent> steps = new ArrayList<JComponent>();
 		while (node!=null) {
 			steps.add(new Step(node));
-			node = node.getParent();
+			node = view.getTree().getParent(node);
 		}
 		for (int i=steps.size()-1; i>=0; i--) {
 			add(steps.get(i));
@@ -124,7 +123,7 @@ public final class BreadcrumbBar extends JPanel {
 			}
 		}
 		
-		final ContextTreeNode current = view.getCurrent();
+		final Object current = view.getCurrent();
 		if (current!=null) {
 			final JLabel topSeparator = new JLabel(" \u2015 ");
 			topSeparator.setForeground(COLOR);
@@ -134,7 +133,7 @@ public final class BreadcrumbBar extends JPanel {
 			steps.clear();
 			while (node!=top) {
 				steps.add(new Step(node));
-				node = node.getParent();
+	            node = view.getTree().getParent(node);
 			}
 			for (int i=steps.size()-1; i>=0; i--) {
 				add(steps.get(i));

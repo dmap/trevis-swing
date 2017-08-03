@@ -18,7 +18,6 @@ import java.awt.Shape;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.HeightAttribute;
 import ch.usi.inf.sape.trevis.model.attribute.LongAttribute;
 import ch.usi.inf.sape.trevis.swing.action.SetIntPropertyAction;
@@ -130,15 +129,15 @@ public final class LinearRenderer extends TreeViewRenderer {
 	
 	//--- hit testing
 	@Override
-	public ContextTreeNode findNode(final int x, final int y) {
+	public Object findNode(final int x, final int y) {
 		if (getTop()==null) {
 			return null;
 		}
-		final int height = (int)new HeightAttribute().evaluate(getTop());
+		final int height = (int)new HeightAttribute(getTree()).evaluate(getTop());
 		return findNode(getTop(), x, y, 0, getWidth(), height, 0);
 	}
 	
-	private ContextTreeNode findNode(final ContextTreeNode node, final int mx, final int my, final int x, final int w, final int height, final int depth) {
+	private Object findNode(final Object node, final int mx, final int my, final int x, final int w, final int height, final int depth) {
 		final int gap = getHorizontalGap();
 		if (w<2*gap) {
 			return null;
@@ -150,12 +149,12 @@ public final class LinearRenderer extends TreeViewRenderer {
 		}
 
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long childValue = sizeMetric.evaluate(node.getChild(c));
+        for (final Object child : getTree().iterable(node)) {
+			final long childValue = sizeMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
 			final int childWidth = childRightX-childLeftX;
-			final ContextTreeNode hit = findNode(node.getChild(c), mx, my, childLeftX, childWidth, height, depth+1);
+			final Object hit = findNode(child, mx, my, childLeftX, childWidth, height, depth+1);
 			if (hit!=null) {
 				return hit;
 			}
@@ -175,11 +174,11 @@ public final class LinearRenderer extends TreeViewRenderer {
 	//--- rendering
 	@Override
 	public void renderTree(final Graphics2D g2, final Surface surface) {
-		final int height = (int)new HeightAttribute().evaluate(getTop());
+		final int height = (int)new HeightAttribute(getTree()).evaluate(getTop());
 		renderNode(g2, surface, getTop(), 0, surface.getWidth(), height, 0);
 	}
 
-	private void renderNode(final Graphics2D g2, final Surface surface, final ContextTreeNode node, final int x, final int w, final int height, final int depth) {
+	private void renderNode(final Graphics2D g2, final Surface surface, final Object node, final int x, final int w, final int height, final int depth) {
 		final int gap = getHorizontalGap();
 		if (w<2*gap || w<1) {
 			return;
@@ -197,9 +196,9 @@ public final class LinearRenderer extends TreeViewRenderer {
 
 		// background
 		final boolean focusSame = getView().getFocusSame();
-		final ContextTreeNode current = getCurrent();
+		final Object current = getCurrent();
 		final boolean focused = node==current || (focusSame && 
-				(current!=null && node!=null && current.getLabel()!=null && node.getLabel()!=null && current.getLabel().equals(node.getLabel())));
+				(current!=null && node!=null && getTree().getLabel(current)!=null && getTree().getLabel(node)!=null && getTree().getLabel(current).equals(getTree().getLabel(node))));
 		final int hsb = getHsb(node, focused);
 		g2.setColor(new Color(Colors.hsbToRgb(hsb)));
 		final int yTop = surface.getHeight()-1-(depth+1)*surface.getHeight()/height;
@@ -224,12 +223,12 @@ public final class LinearRenderer extends TreeViewRenderer {
 		
 		// children
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long childValue = sizeMetric.evaluate(node.getChild(c));
+        for (final Object child : getTree().iterable(node)) {
+			final long childValue = sizeMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
 			final int childWidth = childRightX-childLeftX;
-			renderNode(g2, surface, node.getChild(c), childLeftX, childWidth, height, depth+1);
+			renderNode(g2, surface, child, childLeftX, childWidth, height, depth+1);
 			sum += childValue;
 		}
 	}

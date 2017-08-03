@@ -15,7 +15,6 @@ import java.awt.Graphics2D;
 import javax.swing.JPopupMenu;
 
 import ch.usi.inf.sape.trevis.model.ContextTree;
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 
 
 /**
@@ -44,15 +43,15 @@ public abstract class TreeViewRenderer {
 		return view.getTree();
 	}
 
-	public final ContextTreeNode getRoot() {
+	public final Object getRoot() {
 		return view.getRoot();
 	}
 
-	public final ContextTreeNode getTop() {
+	public final Object getTop() {
 		return view.getTop();
 	}
 
-	public final ContextTreeNode getCurrent() {
+	public final Object getCurrent() {
 		return view.getCurrent();
 	}
 	
@@ -68,7 +67,7 @@ public abstract class TreeViewRenderer {
 		return view.getHeight();
 	}
 	
-	protected final int getHsb(final ContextTreeNode node, final boolean focus) {
+	protected final int getHsb(final Object node, final boolean focus) {
 		return view.getHsb(node, focus);
 	}
 	
@@ -77,6 +76,6 @@ public abstract class TreeViewRenderer {
 	public abstract void prepareConfiguration(final Configuration configuration);
 	public abstract void addPopupMenuItems(final JPopupMenu popup);
 	public abstract void renderTree(final Graphics2D g2, final Surface surface);
-	public abstract ContextTreeNode findNode(int x, int y);
+	public abstract Object findNode(int x, int y);
 
 }

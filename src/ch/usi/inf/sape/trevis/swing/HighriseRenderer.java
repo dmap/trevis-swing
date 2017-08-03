@@ -19,7 +19,6 @@ import java.util.List;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.ChildCountAttribute;
 import ch.usi.inf.sape.trevis.model.attribute.LongAttribute;
 import ch.usi.inf.sape.trevis.swing.action.SetEnumPropertyAction;
@@ -81,7 +80,7 @@ public final class HighriseRenderer extends TreeViewRenderer {
 		configuration.addPropertyIfNotPresent(new Property(FIXED_HEIGHT, "Fixed height", Integer.class, 3));
 		configuration.addPropertyIfNotPresent(new Property(MAX_VARIABLE_HEIGHT, "Max variable height", Integer.class, 80));
 		configuration.addPropertyIfNotPresent(new Property(LABEL_VISIBILITY, "Label visibility", LabelVisibility.class, LabelVisibility.SHOW_ALL));
-		final LongAttribute defaultHeightAttribute = new ChildCountAttribute();
+		final LongAttribute defaultHeightAttribute = new ChildCountAttribute(getTree());
 		configuration.addPropertyIfNotPresent(new Property(HEIGHT_ATTRIBUTE, "Height", LongAttribute.class, defaultHeightAttribute));
 		configuration.addPropertyIfNotPresent(new Property(AVAILABLE_HEIGHT_ATTRIBUTES, "Available heights", LongAttribute[].class, new LongAttribute[] {defaultHeightAttribute}));
 
@@ -215,9 +214,9 @@ public final class HighriseRenderer extends TreeViewRenderer {
 		}
 	}
 
-	private void recomputeMaxHeightMetricValue(final ContextTreeNode node) {
+	private void recomputeMaxHeightMetricValue(final Object node) {
 		maxHeightMetricValue = Math.max(maxHeightMetricValue, getHeightAttribute().evaluate(node));
-		for (final ContextTreeNode child : node) {
+		for (final Object child : getTree().iterable(node)) {
 			recomputeMaxHeightMetricValue(child);
 		}
 	}
@@ -271,14 +270,14 @@ public final class HighriseRenderer extends TreeViewRenderer {
 	
 	//--- hit testing
 	@Override
-	public ContextTreeNode findNode(final int x, final int y) {
+	public Object findNode(final int x, final int y) {
 		if (getTop()==null) {
 			return null;
 		}
 		return findNode(getTop(), x, y, 0, getWidth(), 0);
 	}
 	
-	private ContextTreeNode findNode(final ContextTreeNode node, final int mx, final int my, final int x, final int w, final int baseHeight) {
+	private Object findNode(final Object node, final int mx, final int my, final int x, final int w, final int baseHeight) {
 		final int gap = getHorizontalGap();
 		if (w<2*gap) {
 			return null;
@@ -301,12 +300,12 @@ public final class HighriseRenderer extends TreeViewRenderer {
 		final int yTop = getHeight()-1-baseHeight-getFixedHeight()-variableHeight;
 
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long childValue = sizeMetric.evaluate(node.getChild(c));
+	    for(final Object child : getTree().iterable(node)) {
+			final long childValue = sizeMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
 			final int childWidth = childRightX-childLeftX;
-			final ContextTreeNode hit = findNode(node.getChild(c), mx, my, childLeftX, childWidth, baseHeight+getFixedHeight()+variableHeight);
+			final Object hit = findNode(child, mx, my, childLeftX, childWidth, baseHeight+getFixedHeight()+variableHeight);
 			if (hit!=null) {
 				return hit;
 			}
@@ -327,7 +326,7 @@ public final class HighriseRenderer extends TreeViewRenderer {
 		renderNode(g2, surface, getTop(), 0, surface.getWidth(), 0);
 	}
 
-	private void renderNode(final Graphics2D g2, final Surface surface, final ContextTreeNode node, final int x, final int w, final int baseHeight) {
+	private void renderNode(final Graphics2D g2, final Surface surface, final Object node, final int x, final int w, final int baseHeight) {
 		final int gap = getHorizontalGap();
 		if (w<2*gap || w<1) {
 			return;
@@ -345,9 +344,9 @@ public final class HighriseRenderer extends TreeViewRenderer {
 
 		// background
 		final boolean focusSame = getView().getFocusSame();
-		final ContextTreeNode current = getCurrent();
+		final Object current = getCurrent();
 		final boolean focused = node==current || (focusSame && 
-				(current!=null && node!=null && current.getLabel()!=null && node.getLabel()!=null && current.getLabel().equals(node.getLabel())));
+				(current!=null && node!=null && getTree().getLabel(current)!=null && getTree().getLabel(node)!=null && getTree().getLabel(current).equals(getTree().getLabel(node))));
 		final int hsb = getHsb(node, focused);
 		g2.setColor(new Color(Colors.hsbToRgb(hsb)));
 
@@ -378,12 +377,12 @@ public final class HighriseRenderer extends TreeViewRenderer {
 		
 		// children
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long childValue = widthMetric.evaluate(node.getChild(c));
+        for (final Object child : getTree().iterable(node)) {
+			final long childValue = widthMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
 			final int childWidth = childRightX-childLeftX;
-			renderNode(g2, surface, node.getChild(c), childLeftX, childWidth, baseHeight+getFixedHeight()+variableHeight);
+			renderNode(g2, surface, child, childLeftX, childWidth, baseHeight+getFixedHeight()+variableHeight);
 			sum += childValue;
 		}
 	}

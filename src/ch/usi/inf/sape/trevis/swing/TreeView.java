@@ -33,7 +33,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.ToolTipManager;
 
 import ch.usi.inf.sape.trevis.model.ContextTree;
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.BooleanAttribute;
 import ch.usi.inf.sape.trevis.model.attribute.BooleanConstant;
 import ch.usi.inf.sape.trevis.model.attribute.LeafCountAttribute;
@@ -86,9 +85,9 @@ public final class TreeView extends JComponent implements Printable {
 	private ConfigurationListener configurationListener;
 	private long maxSaturation;
 	private ContextTree tree;
-	private ContextTreeNode root;
-	private ContextTreeNode top;
-	private ContextTreeNode current;
+	private Object root;
+	private Object top;
+	private Object current;
 	private TreeViewRenderer renderer;
 	private final TreeViewRenderer[] availableRenderers;
 
@@ -174,7 +173,7 @@ public final class TreeView extends JComponent implements Printable {
 						showPopup(ev.getX(), ev.getY());
 					}
 					if (ev.getButton()==MouseEvent.BUTTON1 && ev.getClickCount()==2) {
-						final ContextTreeNode node = findNode(ev.getX(), ev.getY());
+						final Object node = findNode(ev.getX(), ev.getY());
 						if (node!=null) {
 							top = node;
 							repaint();
@@ -187,7 +186,7 @@ public final class TreeView extends JComponent implements Printable {
 				@Override
 				public void keyPressed(final KeyEvent ev) {
 					if (ev.getKeyCode()==KeyEvent.VK_MINUS) {
-						final ContextTreeNode node = findParent(null, root, top);
+						final Object node = findParent(null, root, top);
 						if (node!=null) {
 							zoomTo(node);
 						}
@@ -201,7 +200,7 @@ public final class TreeView extends JComponent implements Printable {
 	public void prepareConfiguration(final Configuration configuration) {
 		configuration.addPropertyIfNotPresent(new Property(FOCUS_SAME, "Focus", Boolean.class, false));
 		configuration.addPropertyIfNotPresent(new Property(CUTOFF, "Cutoff", Integer.class, 1));
-		final LongAttribute defaultSizeAttribute = new LeafCountAttribute();
+		final LongAttribute defaultSizeAttribute = new LeafCountAttribute(getTree());
 		configuration.addPropertyIfNotPresent(new Property(SIZE_ATTRIBUTE, "Size", LongAttribute.class, defaultSizeAttribute));
 		configuration.addPropertyIfNotPresent(new Property(AVAILABLE_SIZE_ATTRIBUTES, "Available sizes", LongAttribute[].class, new LongAttribute[] {defaultSizeAttribute}));
 		final LongAttribute defaultSaturationAttribute = new LongConstant("Off", 0);
@@ -243,15 +242,15 @@ public final class TreeView extends JComponent implements Printable {
 		return tree;
 	}
 
-	public final ContextTreeNode getRoot() {
+	public final Object getRoot() {
 		return root;
 	}
 
-	public final ContextTreeNode getTop() {
+	public final Object getTop() {
 		return top;
 	}
 
-	public final ContextTreeNode getCurrent() {
+	public final Object getCurrent() {
 		return current;
 	}
 	
@@ -558,8 +557,8 @@ public final class TreeView extends JComponent implements Printable {
 	private void showPopup(final int x, final int y) {
 		final JPopupMenu popup = new JPopupMenu();
 		//final ContextTreeNode node = findNode(x, y);
-		final ContextTreeNode parentOfTop = findParent(null, root, top);
-		final ContextTreeNode topSplit = findSplit(root);
+		final Object parentOfTop = findParent(null, root, top);
+		final Object topSplit = findSplit(root);
 		final StringAttribute nodeNameAttribute = getLabelAttribute();
 		popup.add(new ZoomToAction("Zoom in", nodeNameAttribute, current, this));
 		popup.add(new ZoomToAction("Zoom out", nodeNameAttribute, parentOfTop, this));
@@ -634,16 +633,16 @@ public final class TreeView extends JComponent implements Printable {
 	}
 
 	
-	private ContextTreeNode findNode(int x, int y) {
+	private Object findNode(int x, int y) {
 		return renderer.findNode(x, y);
 	}
 
-	protected final ContextTreeNode findParent(final ContextTreeNode parent, final ContextTreeNode node, final ContextTreeNode child) {
+	protected final Object findParent(final Object parent, final Object node, final Object child) {
 		if (node==child) {
 			return parent;
 		} else {
-			for (int i=0; i<node.getChildCount(); i++) {
-				final ContextTreeNode n = findParent(node, node.getChild(i), child);
+			for (final Object next: this.tree.iterable(node)) {
+				final Object n = findParent(node, next, child);
 				if (n!=null) {
 					return n;
 				}
@@ -652,12 +651,12 @@ public final class TreeView extends JComponent implements Printable {
 		return null;
 	}
 
-	private ContextTreeNode findSplit(final ContextTreeNode node) {
+	private Object findSplit(final Object node) {
 		if (node==null) {
 			return null;
 		}
-		if (node.getChildCount()==1) {
-			return findSplit(node.getChild(0));
+		if (this.tree.getChildCount(node)==1) {
+			return findSplit(this.tree.getChild(node, 0));
 		} else {
 			return node;
 		}
@@ -672,19 +671,9 @@ public final class TreeView extends JComponent implements Printable {
 	}
 
 	/**
-	 * Show a subtree, where we do not know the ContextTree to which that subtree belongs.
-	 * However, use setRoot(ContextTree tree, ContextTreeNode root) instead, 
-	 * if you want to show a complete ContextTree.
-	 * That way we can also render the tree's label (ContextTree.getLabel()).
-	 */
-	public void setRoot(final ContextTreeNode subtreeRoot) {
-		setRoot(null, subtreeRoot);
-	}
-
-	/**
 	 * Show a subtree, where we know the ContextTree to which that subtree belongs.
 	 */
-	public void setRoot(final ContextTree tree, final ContextTreeNode subtreeRoot) {
+	public void setRoot(final ContextTree tree, final Object subtreeRoot) {
 		this.tree = tree;
 		this.root = subtreeRoot;
 		this.top = subtreeRoot;
@@ -707,7 +696,7 @@ public final class TreeView extends JComponent implements Printable {
 		zoomTo(findSplit(getRoot()));
 	}
 	
-	public void zoomTo(final ContextTreeNode top) {
+	public void zoomTo(final Object top) {
 		this.top = top;
 		repaint();
 		fireTopNodeChanged();
@@ -722,7 +711,7 @@ public final class TreeView extends JComponent implements Printable {
 	public String getToolTipText(final MouseEvent ev) {
 		if (getShowTooltips()) {
 			final StringAttribute toolTipAttribute = getTooltipAttribute();
-			final ContextTreeNode node = findNode(ev.getX(), ev.getY());
+			final Object node = findNode(ev.getX(), ev.getY());
 			if (node!=null) {
 				return (String)toolTipAttribute.getValue(node);
 			} else {
@@ -745,7 +734,7 @@ public final class TreeView extends JComponent implements Printable {
 	}
 
 	public void render(final Graphics2D g2, final Surface surface) {
-		final ContextTreeNode top = getTop();
+		final Object top = getTop();
 		if (top!=null) {
 			renderTree(g2, surface);
 			if (getShowInfoOverlay()) {
@@ -763,7 +752,7 @@ public final class TreeView extends JComponent implements Printable {
 
 	protected void renderInfoOverlay(final Graphics2D g, final Surface surface) {
 		final ContextTree tree = getTree();
-		final ContextTreeNode current = getCurrent();
+		final Object current = getCurrent();
 		final List<StringAttribute> infoAttributes = getInfoLineAttributes();
 
 		final FontMetrics fm = g.getFontMetrics();
@@ -794,8 +783,8 @@ public final class TreeView extends JComponent implements Printable {
 	}
 
 	protected void renderPropertiesOverlay(final Graphics2D g, final Surface surface) {
-		final ContextTreeNode root = getRoot();
-		final ContextTreeNode current = getCurrent();
+		final Object root = getRoot();
+		final Object current = getCurrent();
 		final StringAttribute hueMetric = getHueAttribute();
 		final LongAttribute saturationMetric = getSaturationAttribute();
 		final LongAttribute sizeMetric = getSizeAttribute();
@@ -811,7 +800,7 @@ public final class TreeView extends JComponent implements Printable {
 				g.drawRoundRect(3, y-(lines*15+3), surface.getWidth()-6, 60, 6, 6);
 				final long angleInclusiveValue = sizeMetric.evaluate(current);
 				long angleExclusiveValue = angleInclusiveValue;
-				for (final ContextTreeNode child : current) {
+				for (final Object child : this.tree.iterable(current)) {
 					angleExclusiveValue -= sizeMetric.evaluate(child);
 				}
 				// size
@@ -841,15 +830,15 @@ public final class TreeView extends JComponent implements Printable {
 		}
 	}
 
-	public final int getPathLengthToRoot(final ContextTreeNode node) {
-		if (node.isRoot()) {
+	public final int getPathLengthToRoot(final Object node) {
+		if (this.tree.isRoot(node)) {
 			return 0;
 		} else {
-			return getPathLengthToRoot(node.getParent())+1;
+			return getPathLengthToRoot(this.tree.getParent(node))+1;
 		}
 	}
 
-	public final int getHsb(final ContextTreeNode node, final boolean focus) {
+	public final int getHsb(final Object node, final boolean focus) {
 		if (getHighlightAttribute().evaluate(node)) {
 			final int hue = getHue(node);
 			final int saturation = getSaturation(node);
@@ -859,7 +848,7 @@ public final class TreeView extends JComponent implements Printable {
 		}
 	}
 
-	private final int getHue(final ContextTreeNode node) {
+	private final int getHue(final Object node) {
 		final StringAttribute hueMetric = getHueAttribute();
 		if (hueMetric==null) {
 			return 0;
@@ -870,7 +859,7 @@ public final class TreeView extends JComponent implements Printable {
 		}
 	}
 
-	private final int getSaturation(final ContextTreeNode node) {
+	private final int getSaturation(final Object node) {
 		final LongAttribute saturationMetric = getSaturationAttribute();
 		if (saturationMetric==null) {
 			return 200;
@@ -889,9 +878,9 @@ public final class TreeView extends JComponent implements Printable {
 		}
 	}
 
-	private void recomputeMaxSaturation(final ContextTreeNode node) {
+	private void recomputeMaxSaturation(final Object node) {
 		maxSaturation = Math.max(maxSaturation, getSaturationAttribute().evaluate(node));
-		for (final ContextTreeNode child : node) {
+		for (final Object child : this.tree.iterable(node)) {
 			recomputeMaxSaturation(child);
 		}
 	}

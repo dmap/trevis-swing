@@ -20,7 +20,6 @@ import java.awt.geom.Line2D;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import ch.usi.inf.sape.trevis.model.ContextTreeNode;
 import ch.usi.inf.sape.trevis.model.attribute.LongAttribute;
 import ch.usi.inf.sape.trevis.swing.action.SetIntPropertyAction;
 import ch.usi.inf.sape.util.Colors;
@@ -102,8 +101,8 @@ public final class RadialRenderer extends TreeViewRenderer {
 
 	//--- hit testing
 	@Override
-	public ContextTreeNode findNode(final int mx, final int my) {
-		final ContextTreeNode top = getTop();
+	public Object findNode(final int mx, final int my) {
+		final Object top = getTop();
 		if (top==null) {
 			return null;
 		}
@@ -122,11 +121,11 @@ public final class RadialRenderer extends TreeViewRenderer {
 		}
 		final LongAttribute angleMetric = getView().getSizeAttribute();
 		long sum = 0;
-		for (int c = 0; c<top.getChildCount(); c++) {
-			final long cc = angleMetric.evaluate(top.getChild(c));
+		for(final Object child : getTree().iterable(top)) {
+			final long cc = angleMetric.evaluate(child);
 			final double sa = 360.0*sum/angleMetric.evaluate(top); //NORMALIZATION BY PARENT
 			final double a = 360.0*cc/angleMetric.evaluate(top); //NORMALIZATION BY PARENT
-			final ContextTreeNode node = findNode(expectedLevel, angleDegrees, top.getChild(c), 1, sa, a);
+			final Object node = findNode(expectedLevel, angleDegrees, child, 1, sa, a);
 			if (node!=null) {
 				return node;
 			}
@@ -135,7 +134,7 @@ public final class RadialRenderer extends TreeViewRenderer {
 		return null;
 	}
 	
-	private ContextTreeNode findNode(final int expectedLevel, final double expectedAngle, final ContextTreeNode node, final int level, final double sa, final double a) {
+	private Object findNode(final int expectedLevel, final double expectedAngle, final Object node, final int level, final double sa, final double a) {
 		if (level>expectedLevel) {
 			return null;
 		}
@@ -147,9 +146,9 @@ public final class RadialRenderer extends TreeViewRenderer {
 		}
 		final LongAttribute angleMetric = getView().getSizeAttribute();
 		long sum = 0;
-		for (int c = 0; c<node.getChildCount(); c++) {
-			final long cc = angleMetric.evaluate(node.getChild(c));
-			final ContextTreeNode child = findNode(expectedLevel, expectedAngle, node.getChild(c), level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node)); //NORMALIZATION BY PARENT
+        for(final Object next : getTree().iterable(node)) {
+			final long cc = angleMetric.evaluate(next);
+			final Object child = findNode(expectedLevel, expectedAngle, next, level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node)); //NORMALIZATION BY PARENT
 			if (child!=null) {
 				return child;
 			}
@@ -162,9 +161,9 @@ public final class RadialRenderer extends TreeViewRenderer {
 	//--- rendering
 	@Override
 	public void renderTree(final Graphics2D g2, final Surface surface) {
-		final ContextTreeNode root = getRoot();
-		final ContextTreeNode top = getTop();
-		final ContextTreeNode current = getCurrent();
+		final Object root = getRoot();
+		final Object top = getTop();
+		final Object current = getCurrent();
 		final int centerSize = getCenterSize();
 		final int ringWidth = getRingWidth();
 		final LongAttribute angleMetric = getView().getSizeAttribute();
@@ -174,11 +173,11 @@ public final class RadialRenderer extends TreeViewRenderer {
 			final int cy = surface.getHeight()/2;
 			
 			long sum = 0;
-			for (int c = 0; c<top.getChildCount(); c++) {
-				final long cc = angleMetric.evaluate(top.getChild(c));
+			for(final Object child : getTree().iterable(top)) {
+				final long cc = angleMetric.evaluate(child);
 				final double sa = 360.0*sum/angleMetric.evaluate(top); //NORMALIZATION BY PARENT
 				final double a = 360.0*cc/angleMetric.evaluate(top); //NORMALIZATION BY PARENT
-				renderNode(top.getChild(c), 1, sa, a, g2, surface);
+				renderNode(child, 1, sa, a, g2, surface);
 				sum += cc;
 			}
 			
@@ -218,9 +217,9 @@ public final class RadialRenderer extends TreeViewRenderer {
 		}
 	}
 
-	private void renderNode(final ContextTreeNode node, final int level, final double sa, final double a, final Graphics2D g, final Surface surface) {
-		final ContextTreeNode root = getRoot();
-		final ContextTreeNode current = getCurrent();
+	private void renderNode(final Object node, final int level, final double sa, final double a, final Graphics2D g, final Surface surface) {
+		final Object root = getRoot();
+		final Object current = getCurrent();
 
 		final int width = surface.getWidth();
 		final int height = surface.getHeight();
@@ -237,12 +236,12 @@ public final class RadialRenderer extends TreeViewRenderer {
 			final int y = cy-centerSize/2-level*ringWidth;
 			final int s = centerSize+level*2*ringWidth;
 			long sum = 0;
-			for (int c = 0; c<node.getChildCount(); c++) {
-				final long cc = angleMetric.evaluate(node.getChild(c));
-				renderNode(node.getChild(c), level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node), g, surface); //NORMALIZATION BY PARENT
+            for(final Object child : getTree().iterable(node)) {
+				final long cc = angleMetric.evaluate(child);
+				renderNode(child, level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node), g, surface); //NORMALIZATION BY PARENT
 				sum += cc;
 			}		
-			final int hsb = getHsb(node, node==current || (focusSame && (current!=null && node.getLabel().equals(current.getLabel()))));			
+			final int hsb = getHsb(node, node==current || (focusSame && (current!=null && getTree().getLabel(node).equals(getTree().getLabel(current)))));
 			g.setColor(new Color(Colors.hsbToRgb(hsb)));
 			g.fill(new Arc2D.Double(x, y, s, s, sa, a, Arc2D.PIE));
 			if (ringWidth>2) {
