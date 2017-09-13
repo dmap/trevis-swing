@@ -188,15 +188,12 @@ public final class ImageExportDialog extends JDialog {
 		final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		clipboard.setContents(new Transferable() {
 			public boolean isDataFlavorSupported(final DataFlavor flavor) {
-				System.out.println("Transferable.isDataFlavorSupported("+flavor+")");
 				return flavor.equals(DataFlavor.imageFlavor);
 			}
 			public DataFlavor[] getTransferDataFlavors() {
-				System.out.println("Transferable.getTransferDataFlavors()");
 				return new DataFlavor[] { DataFlavor.imageFlavor };
 			}
 			public Object getTransferData(final DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-				System.out.println("Transferable.getTransferData("+flavor+")");
 			    if (isDataFlavorSupported(flavor)) {
 			        return image;
 			      }
@@ -204,7 +201,6 @@ public final class ImageExportDialog extends JDialog {
 			}
 		}, new ClipboardOwner() {
 			public void lostOwnership(final Clipboard clipboard, final Transferable contents) {
-				System.out.println("ClipboardOwner.lostOwnership()");
 			}
 		});
 	}

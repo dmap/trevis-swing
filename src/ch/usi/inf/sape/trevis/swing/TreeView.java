@@ -125,7 +125,7 @@ public final class TreeView extends JComponent implements Printable {
 			renderer.prepareConfiguration(configuration);
 		}
 		renderer = availableRenderers[0];
-		configuration.dump();
+		//configuration.dump();
 		pageFormat = null;
 		setBackground(Color.WHITE);
 		listeners = new ArrayList<TreeViewListener>();
@@ -918,14 +918,14 @@ public final class TreeView extends JComponent implements Printable {
 			return NO_SUCH_PAGE;
 		}
 		final Graphics2D g2 = (Graphics2D)g;
-		System.out.println("PageFormat.getWidth(): "+pageFormat.getWidth());
-		System.out.println("PageFormat.getHeight(): "+pageFormat.getHeight());
-		System.out.println("PageFormat.getImageableX(): "+pageFormat.getImageableX());
-		System.out.println("PageFormat.getImageableY(): "+pageFormat.getImageableY());
-		System.out.println("PageFormat.getImageableWidth(): "+pageFormat.getImageableWidth());
-		System.out.println("PageFormat.getImageableHeight(): "+pageFormat.getImageableHeight());
-		System.out.println("TreeView.getWidth(): "+getWidth());
-		System.out.println("TreeView.getHeight(): "+getHeight());
+//		System.out.println("PageFormat.getWidth(): "+pageFormat.getWidth());
+//		System.out.println("PageFormat.getHeight(): "+pageFormat.getHeight());
+//		System.out.println("PageFormat.getImageableX(): "+pageFormat.getImageableX());
+//		System.out.println("PageFormat.getImageableY(): "+pageFormat.getImageableY());
+//		System.out.println("PageFormat.getImageableWidth(): "+pageFormat.getImageableWidth());
+//		System.out.println("PageFormat.getImageableHeight(): "+pageFormat.getImageableHeight());
+//		System.out.println("TreeView.getWidth(): "+getWidth());
+//		System.out.println("TreeView.getHeight(): "+getHeight());
 		// move origin to top-left imaginable corner (skip margins)
 		g2.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 		final double scaleX = pageFormat.getImageableWidth()/getWidth();
