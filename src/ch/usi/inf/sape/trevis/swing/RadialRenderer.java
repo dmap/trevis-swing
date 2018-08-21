@@ -10,6 +10,7 @@
  */
 package ch.usi.inf.sape.trevis.swing;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -146,7 +147,7 @@ public final class RadialRenderer extends TreeViewRenderer {
 		}
 		final LongAttribute angleMetric = getView().getSizeAttribute();
 		long sum = 0;
-        for(final Object next : getTree().iterable(node)) {
+		for(final Object next : getTree().iterable(node)) {
 			final long cc = angleMetric.evaluate(next);
 			final Object child = findNode(expectedLevel, expectedAngle, next, level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node)); //NORMALIZATION BY PARENT
 			if (child!=null) {
@@ -229,30 +230,34 @@ public final class RadialRenderer extends TreeViewRenderer {
 		final int ringWidth = getRingWidth();
 		final boolean focusSame = getView().getFocusSame();
 		final LongAttribute angleMetric = getView().getSizeAttribute();
+		final long nc = angleMetric.evaluate(node);
 		
-		if (angleMetric.evaluate(node) >= getView().getCutoff()*angleMetric.evaluate(root)/1000) {
+		if (nc >= getView().getCutoff()*angleMetric.evaluate(root)/1000) {
 			// cut-off at cutoff 1000ths of root's angle
 			final int x = cx-centerSize/2-level*ringWidth;
 			final int y = cy-centerSize/2-level*ringWidth;
 			final int s = centerSize+level*2*ringWidth;
 			long sum = 0;
-            for(final Object child : getTree().iterable(node)) {
+			for(final Object child : getTree().iterable(node)) {
 				final long cc = angleMetric.evaluate(child);
-				renderNode(child, level+1, sa+(a*sum/angleMetric.evaluate(node)), a*cc/angleMetric.evaluate(node), g, surface); //NORMALIZATION BY PARENT
+				renderNode(child, level+1, sa+(a*sum/nc), a*cc/nc, g, surface); //NORMALIZATION BY PARENT
 				sum += cc;
-			}		
+			}
+			
 			final int hsb = getHsb(node, node==current || (focusSame && (current!=null && getTree().getLabel(node).equals(getTree().getLabel(current)))));
 			g.setColor(new Color(Colors.hsbToRgb(hsb)));
-			g.fill(new Arc2D.Double(x, y, s, s, sa, a, Arc2D.PIE));
-			if (ringWidth>2) {
-				g.setColor(getView().getBackground());
-				g.draw(new Arc2D.Double(x, y, s, s, sa, a, Arc2D.OPEN));
-			}
+			g.setStroke(new BasicStroke(Math.max(1, ringWidth-1), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+			g.draw(new Arc2D.Double(x, y, s, s, sa, a, Arc2D.OPEN));
 
 			g.setColor(getView().getBackground());
-			final double x1 = cx+(centerSize/2+level*ringWidth)*Math.cos(sa*Math.PI*2/360);
-			final double y1 = cy-(centerSize/2+level*ringWidth)*Math.sin(sa*Math.PI*2/360);
-			g.draw(new Line2D.Double(cx, cy, x1, y1));
+			g.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+			final double cosSA = Math.cos(sa * Math.PI * 2 / 360);
+			final double sinSA = Math.sin(sa * Math.PI * 2 / 360);
+			final double x1 = cx + ((s - ringWidth) / 2) * cosSA;
+			final double y1 = cy - ((s - ringWidth) / 2) * sinSA;
+			final double x2 = cx + ((s + ringWidth) / 2) * cosSA;
+			final double y2 = cy - ((s + ringWidth) / 2) * sinSA;
+			g.draw(new Line2D.Double(x1, y1, x2, y2));
 		}
 	}
 	
