@@ -133,28 +133,26 @@ public final class LinearRenderer extends TreeViewRenderer {
 		if (getTop()==null) {
 			return null;
 		}
-		final int height = (int)new HeightAttribute(getTree()).evaluate(getTop());
-		return findNode(getTop(), x, y, 0, getWidth(), height, 0);
+		final int height = (int) getTree().getHeight(getTop());
+		return findNode(getTop(), x, y, 0, getWidth(), height, 0, getHorizontalGap(), getView().getSizeAttribute());
 	}
 	
-	private Object findNode(final Object node, final int mx, final int my, final int x, final int w, final int height, final int depth) {
-		final int gap = getHorizontalGap();
+	private Object findNode(final Object node, final int mx, final int my, final int x, final int w, final int height, final int depth, final int gap, final LongAttribute sizeMetric) {
 		if (w<2*gap) {
 			return null;
 		}
-		final LongAttribute sizeMetric = getView().getSizeAttribute();
 		final long size = sizeMetric.evaluate(node);
 		if (size==0) {
 			return null;
 		}
 
 		long sum = 0;
-        for (final Object child : getTree().iterable(node)) {
+		for (final Object child : getTree().iterable(node)) {
 			final long childValue = sizeMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
 			final int childWidth = childRightX-childLeftX;
-			final Object hit = findNode(child, mx, my, childLeftX, childWidth, height, depth+1);
+			final Object hit = findNode(child, mx, my, childLeftX, childWidth, height, depth+1, gap, sizeMetric);
 			if (hit!=null) {
 				return hit;
 			}
@@ -174,7 +172,7 @@ public final class LinearRenderer extends TreeViewRenderer {
 	//--- rendering
 	@Override
 	public void renderTree(final Graphics2D g2, final Surface surface) {
-		final int height = (int)new HeightAttribute(getTree()).evaluate(getTop());
+        final int height = (int) getTree().getHeight(getTop());
 		renderNode(g2, surface, getTop(), 0, surface.getWidth(), height, 0);
 	}
 
@@ -223,7 +221,7 @@ public final class LinearRenderer extends TreeViewRenderer {
 		
 		// children
 		long sum = 0;
-        for (final Object child : getTree().iterable(node)) {
+		for (final Object child : getTree().iterable(node)) {
 			final long childValue = sizeMetric.evaluate(child);
 			final int childLeftX = (int)(x+(w*sum/size));
 			final int childRightX = (int)(x+(w*(sum+childValue)/size));
